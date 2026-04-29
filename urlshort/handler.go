@@ -13,7 +13,6 @@ import (
 // If the path is not provided in the map, then the fallback
 // http.Handler will be called instead.
 func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.HandlerFunc {
-	//	TODO: Implement this...
 	handlerFunc := func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 		if url, ok := pathsToUrls[path]; ok {
@@ -42,26 +41,21 @@ func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.Handl
 // See MapHandler to create a similar http.HandlerFunc via
 // a mapping of paths to urls.
 type pathUrl struct {
-	Path string
-	Url  string
+	Path string `yaml:"path"`
+	URL  string `yaml:"url"`
 }
 
 func YAMLHandler(yml []byte, fallback http.Handler) (http.HandlerFunc, error) {
-	// TODO: Implement this...
-	pathUrls := make([]pathUrl, 10)
-	err := yaml.Unmarshal(yml, &pathUrls)
+	pathUrls, err := parseYaml(yml)
 	if err != nil {
 		return nil, err
 	}
 
-	pathToUrls := make(map[string]string)
-	for _, pathUrl := range pathUrls {
-		pathToUrls[pathUrl.Path] = pathUrl.Url
-	}
+	pathsToUrls := buildMap(pathUrls)
 
 	handlerFunc := func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
-		if url, ok := pathToUrls[path]; ok {
+		if url, ok := pathsToUrls[path]; ok {
 			http.Redirect(w, r, url, http.StatusFound)
 		} else {
 			fallback.ServeHTTP(w, r)
@@ -69,4 +63,21 @@ func YAMLHandler(yml []byte, fallback http.Handler) (http.HandlerFunc, error) {
 	}
 
 	return handlerFunc, nil
+}
+
+func parseYaml(yml []byte) ([]pathUrl, error) {
+	var pathUrls []pathUrl
+	err := yaml.Unmarshal(yml, &pathUrls)
+	if err != nil {
+		return nil, err
+	}
+	return pathUrls, nil
+}
+
+func buildMap(pathUrls []pathUrl) map[string]string {
+	pathsToUrls := make(map[string]string)
+	for _, pu := range pathUrls {
+		pathsToUrls[pu.Path] = pu.URL
+	}
+	return pathsToUrls
 }

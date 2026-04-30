@@ -56,18 +56,37 @@ const defaultHandlerTmpl = `
 
 </html>`
 
-type handler struct {
-	s Story
-}
-
-func NewHandler(s Story) http.Handler {
-	return handler{s}
-}
-
 var tmpl *template.Template
 
 func init() {
 	tmpl = template.Must(template.New("").Parse(defaultHandlerTmpl))
+}
+
+type handler struct {
+	s Story
+	t *template.Template
+}
+
+// functional options
+type handlerOption func(*handler)
+
+// custom template
+func WithTemplate(t *template.Template) handlerOption {
+	return func(h *handler) {
+		h.t = t
+	}
+}
+
+func NewHandler(s Story, handlerOptions ...handlerOption) http.Handler {
+	// default config
+	h := handler{s, tmpl}
+
+	// custom config
+	for _, ho := range handlerOptions {
+		ho(&h)
+	}
+
+	return h
 }
 
 func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -78,7 +97,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path = path[1:]
 
 	if chapter, ok := h.s[path]; ok {
-		err := tmpl.Execute(w, chapter)
+		err := h.t.Execute(w, chapter)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, "Something went wrong...", http.StatusInternalServerError)

@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"unicode"
 )
 
 /*
@@ -17,7 +18,15 @@ import (
 
 func camelcase(s string) int32 {
 	// Write your code here
+	var ret int32 = 1
 
+	for _, char := range s {
+		if unicode.IsUpper(char) {
+			ret++
+		}
+	}
+
+	return ret
 }
 
 func main() {

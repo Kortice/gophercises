@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 /*
@@ -20,7 +21,27 @@ import (
 
 func caesarCipher(s string, k int32) string {
 	// Write your code here
+	ret := strings.Builder{}
 
+	k %= 26
+
+	for _, char := range s {
+		if unicode.IsLower(char) {
+			char += k
+			if !unicode.IsLower(char) {
+				char = char%'z' + 'a' - 1
+			}
+		}
+		if unicode.IsUpper(char) {
+			char += k
+			if !unicode.IsUpper(char) {
+				char = char%'Z' + 'A' - 1
+			}
+		}
+		ret.WriteRune(char)
+	}
+
+	return ret.String()
 }
 
 func main() {
@@ -36,6 +57,9 @@ func main() {
 	nTemp, err := strconv.ParseInt(strings.TrimSpace(readLine(reader)), 10, 64)
 	checkError(err)
 	n := int32(nTemp)
+
+	// fix the problem
+	_ = n
 
 	s := readLine(reader)
 
